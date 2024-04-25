@@ -17,6 +17,9 @@ func RegisterSdkMsgsDynamic(registry cdctypes.InterfaceRegistry, pluginsDir stri
 		return err
 	}
 
+	fmt.Print(files)
+	fmt.Print(unregisteredMsgs)
+
 	for _, file := range files {
 		p, err := plugin.Open(file)
 		if err != nil {
@@ -43,19 +46,41 @@ func RegisterSdkMsgsDynamic(registry cdctypes.InterfaceRegistry, pluginsDir stri
 	return nil
 }
 
-func findUnregisteredMsgs(clientCtx client.Context, stdTx sdk.Tx) (map[string]struct{}, error) {
+func findUnregisteredTypes(clientCtx client.Context, messages []map[string]any) (map[string]struct{}, error) {
 	registry := clientCtx.Codec.InterfaceRegistry()
 	unregisteredMsgs := make(map[string]struct{})
-	for _, msg := range stdTx.GetMsgs() {
-		anyMsg, err := cdctypes.NewAnyWithValue(msg)
-		if err != nil {
-			return nil, err
-		}
-		typeURL := anyMsg.TypeUrl
-		if _, err := registry.Resolve(typeURL); err != nil {
-			// type not registered, add to the list if not already there
-			unregisteredMsgs[typeURL] = struct{}{}
+	for _, msg := range messages {
+		for k, v := range msg {
+			if k == "@type" {
+				typeURL := v.(string)
+				if _, err := registry.Resolve(typeURL); err != nil {
+					// type not registered, add to the list if not already there
+					unregisteredMsgs[typeURL] = struct{}{}
+				}
+				continue
+			}
+			switch x := v.(type) {
+			case []map[string]any:
+				for _, m := range x {
+					tmpUnregisteredMsgs, err := findUnregisteredTypes(clientCtx, []map[string]any{m})
+					if err != nil {
+						return nil, err
+					}
+					for k := range tmpUnregisteredMsgs {
+						unregisteredMsgs[k] = struct{}{}
+					}
+				}
+			case map[string]any:
+				tmpUnregisteredMsgs, err := findUnregisteredTypes(clientCtx, []map[string]any{x})
+				if err != nil {
+					return nil, err
+				}
+				for k := range tmpUnregisteredMsgs {
+					unregisteredMsgs[k] = struct{}{}
+				}
+			}
 		}
 	}
+
 	return unregisteredMsgs, nil
 }

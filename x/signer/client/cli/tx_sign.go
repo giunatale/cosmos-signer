@@ -1,17 +1,21 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	authcli "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 )
 
 const (
 	flagBech32Prefix = "bech32-prefix"
+	flagPrefixPublic = "prefix-pub"
 	flagPluginsDir   = "plugins-dir"
 )
 
@@ -19,6 +23,7 @@ const (
 func GetSignCommand() *cobra.Command {
 	cmd := authcli.GetSignCommand()
 	cmd.Flags().String(flagBech32Prefix, sdk.Bech32MainPrefix, "The Bech32 prefix encoding for the signer address")
+	cmd.Flags().String(flagPrefixPublic, sdk.PrefixPublic, "The prefix for public keys")
 	cmd.Flags().String(flagPluginsDir, "", "The directory to search for plugin files")
 
 	cmd.PreRun = preSignCmd
@@ -63,16 +68,40 @@ func makeSignCmd(origMakeSignCmd func(cmd *cobra.Command, args []string) error) 
 			return err
 		}
 
+		bech32prefix, err := cmd.Flags().GetString(flagBech32Prefix)
+		if err != nil {
+			return err
+		}
+		prefixPublic, err := cmd.Flags().GetString(flagPrefixPublic)
+		if err != nil {
+			return err
+		}
+		bech32PrefixAccPub := bech32prefix + prefixPublic
+		// set the bech32 prefix
+		config := sdk.GetConfig()
+		config.SetBech32PrefixForAccount(bech32prefix, bech32PrefixAccPub)
+		config.Seal()
+
 		filename := args[0]
-		stdTx, err := authclient.ReadTxFromFile(clientCtx, filename)
+		f, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		var rawTx struct {
+			Body struct {
+				Messages []map[string]any
+			}
+		}
+		if err := json.NewDecoder(f).Decode(&rawTx); err != nil {
+			return fmt.Errorf("JSON decode %s: %v", filename, err)
+		}
+		unregisteredMsgs, err := findUnregisteredTypes(clientCtx, rawTx.Body.Messages)
 		if err != nil {
 			return err
 		}
 
-		unregisteredMsgs, err := findUnregisteredMsgs(clientCtx, stdTx)
-		if err != nil {
-			return err
-		}
+		fmt.Print(unregisteredMsgs)
 
 		if len(unregisteredMsgs) > 0 {
 			pluginsDir, err := cmd.Flags().GetString(flagPluginsDir)
