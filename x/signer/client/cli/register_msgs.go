@@ -12,7 +12,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
-func RegisterSdkMsgsDynamic(ctx client.Context, pluginsDir string, unregisteredTypes map[string]struct{}) error {
+func RegisterTypes(ctx client.Context, pluginsDir string, unregisteredTypes map[string]struct{}) error {
 	legacyAminoCodec := ctx.LegacyAmino
 	registry := ctx.Codec.InterfaceRegistry()
 	files, err := filepath.Glob(filepath.Join(pluginsDir, "*.so"))

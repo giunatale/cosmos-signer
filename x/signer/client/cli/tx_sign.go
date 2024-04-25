@@ -52,7 +52,6 @@ func preSignCmd(cmd *cobra.Command, _ []string) {
 func makeSignCmd(origMakeSignCmd func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) (err error) {
 		var clientCtx client.Context
-
 		clientCtx, err = client.GetClientTxContext(cmd)
 		if err != nil {
 			return err
@@ -82,12 +81,10 @@ func makeSignCmd(origMakeSignCmd func(cmd *cobra.Command, args []string) error) 
 			if err != nil {
 				return err
 			}
-			err = RegisterSdkMsgsDynamic(clientCtx, pluginsDir, unregisteredTypes)
+			err = RegisterTypes(clientCtx, pluginsDir, unregisteredTypes)
 			if err != nil {
 				return err
 			}
-
-			client.SetCmdClientContext(cmd, clientCtx) // not sure if this is needed
 		}
 
 		return origMakeSignCmd(cmd, args)

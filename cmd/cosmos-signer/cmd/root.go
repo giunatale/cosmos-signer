@@ -26,6 +26,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/atomone-hub/cosmos-signer/app"
+	signercli "github.com/atomone-hub/cosmos-signer/x/signer/client/cli"
 )
 
 const (
@@ -49,7 +50,7 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
-			cmd.SetOut(cmd.OutOrStdout())
+			cmd.SetOut(signercli.NewFilterNullValJSON(cmd.OutOrStdout()))
 			cmd.SetErr(cmd.ErrOrStderr())
 
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
@@ -115,6 +116,19 @@ func NewRootCmd() *cobra.Command {
 			if err := client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
+
+			return nil
+		},
+		PersistentPostRunE: func(cmd *cobra.Command, _ []string) error {
+			txCmd, _, err := cmd.Find([]string{"tx"})
+			if err != nil {
+				return err
+			}
+			outputDoc, err := txCmd.Flags().GetString(flags.FlagOutputDocument)
+			if err != nil {
+				return err
+			}
+			signercli.FilterNullJSONKeysFromFile(outputDoc)
 
 			return nil
 		},
