@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 
 	"cosmossdk.io/core/appmodule"
-	"github.com/atomone/cosmos-signer/x/signer/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+
+	"github.com/atomone/cosmos-signer/x/signer/types"
 )
 
 var (
@@ -43,9 +44,7 @@ func (AppModuleBasic) Name() string {
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
 
 // RegisterInterfaces registers a module's interface types and their concrete implementations as proto.Message.
-func (a AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {
-	types.RegisterInterfaces(reg)
-}
+func (a AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {}
 
 // DefaultGenesis returns a default GenesisState for the module, marshalled to json.RawMessage.
 // The default GenesisState need to be defined by the module developer and is primarily used for testing.
