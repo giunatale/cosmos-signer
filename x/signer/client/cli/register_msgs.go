@@ -4,83 +4,132 @@ import (
 	"fmt"
 	"path/filepath"
 	"plugin"
-	"reflect"
+	"strings"
+	"unicode"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func RegisterSdkMsgsDynamic(registry cdctypes.InterfaceRegistry, pluginsDir string, unregisteredMsgs map[string]struct{}) error {
+func RegisterSdkMsgsDynamic(ctx client.Context, pluginsDir string, unregisteredTypes map[string]struct{}) error {
+	legacyAminoCodec := ctx.LegacyAmino
+	registry := ctx.Codec.InterfaceRegistry()
 	files, err := filepath.Glob(filepath.Join(pluginsDir, "*.so"))
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(files)
-	fmt.Print(unregisteredMsgs)
+	lookupPaths := getLookupPackages(unregisteredTypes)
 
-	for _, file := range files {
-		p, err := plugin.Open(file)
-		if err != nil {
-			return err
-		}
-
-		for symbolName := range unregisteredMsgs {
-			sym, err := p.Lookup(symbolName)
+	for symbolName := range lookupPaths {
+		symbolFound := false
+		for _, file := range files {
+			p, err := plugin.Open(file)
 			if err != nil {
-				return fmt.Errorf("failed to lookup symbol %s in %s: %w", symbolName, file, err)
+				return err
 			}
+			packageName := sanitizeSymbolName(symbolName)
+			symRegisterLegacyAminoCodec := fmt.Sprintf("%s_RegisterLegacyAminoCodec", packageName)
+			symRegisterLegacyAminoCodecObj, err := p.Lookup(symRegisterLegacyAminoCodec)
+			if err != nil {
+				continue
+			}
+			registerLegacyAminoCodec, ok := symRegisterLegacyAminoCodecObj.(*func(*codec.LegacyAmino))
+			if !ok {
+				return fmt.Errorf("failed to load %s", symRegisterLegacyAminoCodec)
+			}
+			(*registerLegacyAminoCodec)(legacyAminoCodec)
 
-			msgType, ok := sym.(reflect.Type)
-			if !ok || !reflect.PointerTo(msgType).Implements(reflect.TypeOf((*sdk.Msg)(nil)).Elem()) {
-				return fmt.Errorf("symbol %s in %s is not a sdk.Msg", symbolName, file)
+			symRegisterInterfaces := fmt.Sprintf("%s_RegisterInterfaces", packageName)
+			symRegisterInterfacesObj, err := p.Lookup(symRegisterInterfaces)
+			if err != nil {
+				continue
 			}
-
-			instance := reflect.New(msgType).Interface()
-			if protoMsg, ok := instance.(sdk.Msg); ok {
-				registry.RegisterImplementations((*sdk.Msg)(nil), protoMsg)
+			registerInterfaces, ok := symRegisterInterfacesObj.(*func(cdctypes.InterfaceRegistry))
+			if !ok {
+				return fmt.Errorf("failed to load %s", symRegisterInterfaces)
 			}
+			(*registerInterfaces)(registry)
+			symbolFound = true
+		}
+		if !symbolFound {
+			return fmt.Errorf("failed to lookup symbol %s", symbolName)
 		}
 	}
+
 	return nil
 }
 
 func findUnregisteredTypes(clientCtx client.Context, messages []map[string]any) (map[string]struct{}, error) {
 	registry := clientCtx.Codec.InterfaceRegistry()
-	unregisteredMsgs := make(map[string]struct{})
+	unregisteredTypes := make(map[string]struct{})
 	for _, msg := range messages {
 		for k, v := range msg {
 			if k == "@type" {
 				typeURL := v.(string)
 				if _, err := registry.Resolve(typeURL); err != nil {
 					// type not registered, add to the list if not already there
-					unregisteredMsgs[typeURL] = struct{}{}
+					unregisteredTypes[typeURL] = struct{}{}
 				}
 				continue
 			}
 			switch x := v.(type) {
 			case []map[string]any:
 				for _, m := range x {
-					tmpUnregisteredMsgs, err := findUnregisteredTypes(clientCtx, []map[string]any{m})
+					tmpUnregisteredTypes, err := findUnregisteredTypes(clientCtx, []map[string]any{m})
 					if err != nil {
 						return nil, err
 					}
-					for k := range tmpUnregisteredMsgs {
-						unregisteredMsgs[k] = struct{}{}
+					for k := range tmpUnregisteredTypes {
+						unregisteredTypes[k] = struct{}{}
 					}
 				}
 			case map[string]any:
-				tmpUnregisteredMsgs, err := findUnregisteredTypes(clientCtx, []map[string]any{x})
+				tmpUnregisteredTypes, err := findUnregisteredTypes(clientCtx, []map[string]any{x})
 				if err != nil {
 					return nil, err
 				}
-				for k := range tmpUnregisteredMsgs {
-					unregisteredMsgs[k] = struct{}{}
+				for k := range tmpUnregisteredTypes {
+					unregisteredTypes[k] = struct{}{}
 				}
 			}
 		}
 	}
 
-	return unregisteredMsgs, nil
+	return unregisteredTypes, nil
+}
+
+// getLookupPackages outputs the list of package URLs
+// for lookup in the plugins directory.
+func getLookupPackages(unregisteredTypes map[string]struct{}) map[string]struct{} {
+	// if type URL is `"/cosmos.bank.v1beta1.MsgSend"`, the package URL is `"/cosmos.bank.v1beta1"`
+	lookupPaths := make(map[string]struct{})
+	for typeURL := range unregisteredTypes {
+		s := strings.Split(typeURL, ".")[0:3]
+		lookupPath := strings.Join(s, ".")
+		if _, ok := lookupPaths[lookupPath]; !ok {
+			lookupPaths[lookupPath] = struct{}{}
+		}
+	}
+	return lookupPaths
+}
+
+// sanitizeSymbolName sanitizes the type URL removing
+// the leading `/`, replacing `.` with `_` and uppercasing
+// the first character.
+func sanitizeSymbolName(symbolName string) string {
+	symbolName = symbolName[1:]
+	symbolName = strings.ReplaceAll(symbolName, ".", "_")
+	symbolName = capitalizeFirstChar(symbolName)
+	return symbolName
+}
+
+func capitalizeFirstChar(s string) string {
+	if s == "" {
+		return s
+	}
+	rs := []rune(s)
+	rs[0] = unicode.ToUpper(rs[0])
+	return string(rs)
 }

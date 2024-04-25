@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/spf13/cobra"
 
-	signercmd "github.com/atomone/cosmos-signer/x/signer/client/cli"
+	signercli "github.com/atomone-hub/cosmos-signer/x/signer/client/cli"
 )
 
 func initRootCmd(
@@ -29,7 +29,7 @@ func txCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		signercmd.GetSignCommand(),
+		signercli.GetSignCommand(),
 	)
 	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
 

@@ -23,7 +23,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/atomone/cosmos-signer/app"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/atomone-hub/cosmos-signer/app"
+)
+
+const (
+	flagBech32Prefix = "bech32-prefix"
+	flagPrefixPublic = "prefix-pub"
 )
 
 // NewRootCmd creates a new root command for cosmos-signer. It is called once in the main function.
@@ -35,24 +42,6 @@ func NewRootCmd() *cobra.Command {
 		moduleBasicManager module.BasicManager
 		clientCtx          client.Context
 	)
-
-	if err := depinject.Inject(
-		depinject.Configs(app.AppConfig(),
-			depinject.Supply(
-				log.NewNopLogger(),
-			),
-			depinject.Provide(
-				ProvideClientContext,
-				ProvideKeyring,
-			),
-		),
-		&txConfigOpts,
-		&autoCliOpts,
-		&moduleBasicManager,
-		&clientCtx,
-	); err != nil {
-		panic(err)
-	}
 
 	rootCmd := &cobra.Command{
 		Use:           app.Name,
@@ -67,6 +56,38 @@ func NewRootCmd() *cobra.Command {
 			clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {
 				return err
+			}
+
+			bech32prefix, err := cmd.Flags().GetString(flagBech32Prefix)
+			if err != nil {
+				return err
+			}
+			prefixPublic, err := cmd.Flags().GetString(flagPrefixPublic)
+			if err != nil {
+				return err
+			}
+			bech32PrefixAccPub := bech32prefix + prefixPublic
+			// set the bech32 prefix
+			sdkCfg := sdk.GetConfig()
+			sdkCfg.SetBech32PrefixForAccount(bech32prefix, bech32PrefixAccPub)
+			sdkCfg.Seal()
+
+			if err := depinject.Inject(
+				depinject.Configs(app.NewAppConfigWithBech32Prefix(bech32prefix),
+					depinject.Supply(
+						log.NewNopLogger(),
+					),
+					depinject.Provide(
+						ProvideClientContext,
+						ProvideKeyring,
+					),
+				),
+				&txConfigOpts,
+				&autoCliOpts,
+				&moduleBasicManager,
+				&clientCtx,
+			); err != nil {
+				panic(err)
 			}
 
 			clientCtx, err = config.ReadFromClientConfig(clientCtx)
@@ -100,6 +121,8 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	initRootCmd(rootCmd)
+	rootCmd.PersistentFlags().String(flagBech32Prefix, sdk.Bech32MainPrefix, "The Bech32 prefix encoding for the signer address")
+	rootCmd.PersistentFlags().String(flagPrefixPublic, sdk.PrefixPublic, "The prefix for public keys")
 
 	overwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID:        strings.ReplaceAll(app.Name, "-", ""),

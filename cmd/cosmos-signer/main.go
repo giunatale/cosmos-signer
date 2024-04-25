@@ -6,8 +6,8 @@ import (
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/atomone/cosmos-signer/app"
-	"github.com/atomone/cosmos-signer/cmd/cosmos-signer/cmd"
+	"github.com/atomone-hub/cosmos-signer/app"
+	"github.com/atomone-hub/cosmos-signer/cmd/cosmos-signer/cmd"
 )
 
 func main() {

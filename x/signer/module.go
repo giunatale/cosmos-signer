@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	"github.com/atomone/cosmos-signer/x/signer/types"
+	"github.com/atomone-hub/cosmos-signer/x/signer/types"
 )
 
 var (

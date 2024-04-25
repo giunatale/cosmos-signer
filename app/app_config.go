@@ -6,7 +6,8 @@ import (
 	authmodulev1 "cosmossdk.io/api/cosmos/auth/module/v1"
 	txconfigv1 "cosmossdk.io/api/cosmos/tx/config/v1"
 	"cosmossdk.io/core/appconfig"
-	_ "github.com/atomone/cosmos-signer/x/signer" // import for side-effects
+	"cosmossdk.io/depinject"
+	_ "github.com/atomone-hub/cosmos-signer/x/signer" // import for side-effects
 	"github.com/cosmos/cosmos-sdk/runtime"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
@@ -14,7 +15,12 @@ import (
 
 var (
 	// appConfig application configuration (used by depinject)
-	appConfig = appconfig.Compose(&appv1alpha1.Config{
+	appConfig = NewAppConfigWithBech32Prefix(AccountAddressPrefix)
+)
+
+// NewAppConfigWithBech32Prefix creates a new app configuration with the provided Bech32 prefixes.
+func NewAppConfigWithBech32Prefix(bech32Prefix string) depinject.Config {
+	return appconfig.Compose(&appv1alpha1.Config{
 		Modules: []*appv1alpha1.ModuleConfig{
 			{
 				Name: runtime.ModuleName,
@@ -25,7 +31,7 @@ var (
 			{
 				Name: authtypes.ModuleName,
 				Config: appconfig.WrapAny(&authmodulev1.Module{
-					Bech32Prefix: AccountAddressPrefix,
+					Bech32Prefix: bech32Prefix,
 				}),
 			},
 			{
@@ -34,4 +40,4 @@ var (
 			},
 		},
 	})
-)
+}
