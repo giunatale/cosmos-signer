@@ -104,9 +104,11 @@ func findUnregisteredTypes(clientCtx client.Context, messages []map[string]any) 
 // for lookup in the plugins directory.
 func getLookupPackages(unregisteredTypes map[string]struct{}) map[string]struct{} {
 	// if type URL is `"/cosmos.bank.v1beta1.MsgSend"`, the package URL is `"/cosmos.bank.v1beta1"`
+	// we assume the package URL is the prefix of the type URL up to the last `.`
 	lookupPaths := make(map[string]struct{})
 	for typeURL := range unregisteredTypes {
-		s := strings.Split(typeURL, ".")[0:3]
+		s := strings.Split(typeURL, ".")
+		s = s[:len(s)-1]
 		lookupPath := strings.Join(s, ".")
 		if _, ok := lookupPaths[lookupPath]; !ok {
 			lookupPaths[lookupPath] = struct{}{}
