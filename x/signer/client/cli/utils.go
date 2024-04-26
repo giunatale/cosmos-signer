@@ -7,28 +7,30 @@ import (
 )
 
 var (
-	nullKeys = []string{"tip"}
+	defaultNullKeys = map[string]struct{}{
+		"tip": {},
+	}
 )
 
-// FilterNullValJSON implements the io.Writer interface
-type FilterNullValJSON struct {
+// FilterNullKeysJSON implements the io.Writer interface
+type FilterNullKeysJSON struct {
 	Output   io.Writer
-	NullKeys []string
+	NullKeys map[string]struct{}
 }
 
-func NewFilterNullValJSON(output io.Writer) *FilterNullValJSON {
-	return &FilterNullValJSON{
+func NewFilterNullKeysJSON(output io.Writer) *FilterNullKeysJSON {
+	return &FilterNullKeysJSON{
 		Output:   output,
-		NullKeys: nullKeys,
+		NullKeys: defaultNullKeys,
 	}
 }
 
-func (w *FilterNullValJSON) Write(p []byte) (n int, err error) {
+func (w *FilterNullKeysJSON) Write(p []byte) (n int, err error) {
 	var data interface{}
 	if err := json.Unmarshal(p, &data); err != nil {
 		return 0, err
 	}
-	filteredData := FilterNullJSONKeys(data)
+	filteredData := w.FilterNullJSONKeys(data)
 	filteredBytes, err := json.Marshal(filteredData)
 	if err != nil {
 		return 0, err
@@ -37,24 +39,24 @@ func (w *FilterNullValJSON) Write(p []byte) (n int, err error) {
 }
 
 // FilterNullJSONKeys recursively filters out null values from JSON for specified keys
-func FilterNullJSONKeys(data interface{}) interface{} {
+func (w *FilterNullKeysJSON) FilterNullJSONKeys(data interface{}) interface{} {
 	switch v := data.(type) {
 	case map[string]interface{}:
 		for key, val := range v {
-			if shouldCheckKey(key) {
+			if _, ok := w.NullKeys[key]; ok && val == nil {
 				if val == nil {
 					delete(v, key)
 				} else {
-					v[key] = FilterNullJSONKeys(val)
+					v[key] = w.FilterNullJSONKeys(val)
 				}
 			} else {
-				v[key] = FilterNullJSONKeys(val) // Recursively process all keys
+				v[key] = w.FilterNullJSONKeys(val)
 			}
 		}
 		return v
 	case []interface{}:
 		for i := range v {
-			v[i] = FilterNullJSONKeys(v[i]) // Recursively process array elements
+			v[i] = w.FilterNullJSONKeys(v[i])
 		}
 		return v
 	default:
@@ -62,17 +64,7 @@ func FilterNullJSONKeys(data interface{}) interface{} {
 	}
 }
 
-// shouldCheckKey checks if the key is one of the specified keys to check
-func shouldCheckKey(key string) bool {
-	for _, k := range nullKeys {
-		if key == k {
-			return true
-		}
-	}
-	return false
-}
-
-func FilterNullJSONKeysFromFile(outputDoc string) {
+func (w *FilterNullKeysJSON) FilterNullJSONKeysFromFile(outputDoc string) {
 	if outputDoc != "" {
 		content, err := os.ReadFile(outputDoc)
 		if err != nil {
@@ -82,7 +74,7 @@ func FilterNullJSONKeysFromFile(outputDoc string) {
 		if err := json.Unmarshal(content, &data); err != nil {
 			panic(err)
 		}
-		filteredData := FilterNullJSONKeys(data)
+		filteredData := w.FilterNullJSONKeys(data)
 		filteredBytes, err := json.Marshal(filteredData)
 		if err != nil {
 			panic(err)

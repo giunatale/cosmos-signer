@@ -50,7 +50,7 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
-			cmd.SetOut(signercli.NewFilterNullValJSON(cmd.OutOrStdout()))
+			cmd.SetOut(signercli.NewFilterNullKeysJSON(cmd.OutOrStdout()))
 			cmd.SetErr(cmd.ErrOrStderr())
 
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
@@ -128,8 +128,8 @@ func NewRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			signercli.FilterNullJSONKeysFromFile(outputDoc)
-
+			w := signercli.NewFilterNullKeysJSON(cmd.OutOrStdout())
+			w.FilterNullJSONKeysFromFile(outputDoc)
 			return nil
 		},
 	}
