@@ -1,0 +1,8 @@
+[submodule "plugins/govgen"]
+	path = plugins/govgen
+	url = https://github.com/giunatale/cosmos-signer-govgen.git
+	branch = plugin
+[submodule "plugins/gaia"]
+	path = plugins/gaia
+	url = https://github.com/giunatale/cosmos-signer-gaia.git
+	branch = plugin
