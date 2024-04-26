@@ -28,7 +28,7 @@ func NewFilterNullKeysJSON(output io.Writer) *FilterNullKeysJSON {
 func (w *FilterNullKeysJSON) Write(p []byte) (n int, err error) {
 	var data interface{}
 	if err := json.Unmarshal(p, &data); err != nil {
-		return 0, err
+		return w.Output.Write(p)
 	}
 	filteredData := w.FilterNullJSONKeys(data)
 	filteredBytes, err := json.Marshal(filteredData)
@@ -43,7 +43,7 @@ func (w *FilterNullKeysJSON) FilterNullJSONKeys(data interface{}) interface{} {
 	switch v := data.(type) {
 	case map[string]interface{}:
 		for key, val := range v {
-			if _, ok := w.NullKeys[key]; ok && val == nil {
+			if _, ok := w.NullKeys[key]; ok {
 				if val == nil {
 					delete(v, key)
 				} else {
@@ -64,7 +64,8 @@ func (w *FilterNullKeysJSON) FilterNullJSONKeys(data interface{}) interface{} {
 	}
 }
 
-func (w *FilterNullKeysJSON) FilterNullJSONKeysFromFile(outputDoc string) {
+func FilterNullJSONKeysFile(outputDoc string) {
+	w := NewFilterNullKeysJSON(nil)
 	if outputDoc != "" {
 		content, err := os.ReadFile(outputDoc)
 		if err != nil {

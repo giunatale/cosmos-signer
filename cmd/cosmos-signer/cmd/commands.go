@@ -14,18 +14,34 @@ func initRootCmd(
 ) {
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
-		txCommand(),
+		txCommand(rootCmd),
 		keys.Commands(),
 	)
 }
 
-func txCommand() *cobra.Command {
+func txCommand(rootCmd *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
 		DisableFlagParsing:         false,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			err := rootCmd.PersistentPreRunE(cmd, []string{})
+			if err != nil {
+				return err
+			}
+			cmd.SetOut(signercli.NewFilterNullKeysJSON(cmd.OutOrStdout()))
+			return nil
+		},
+		PersistentPostRunE: func(cmd *cobra.Command, _ []string) error {
+			outputDoc, err := cmd.Flags().GetString(flags.FlagOutputDocument)
+			if err != nil {
+				return err
+			}
+			signercli.FilterNullJSONKeysFile(outputDoc)
+			return nil
+		},
 	}
 
 	cmd.AddCommand(
