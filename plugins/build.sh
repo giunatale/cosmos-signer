@@ -5,6 +5,7 @@ for dir in */; do
         pushd "${dir}" > /dev/null
         echo "Running build.sh in ${dir%/}"
         ./build.sh
+    mkdir -p "../../build/plugins"
 	mv plugin.so "../../build/plugins/${dir%/}.so"
         popd > /dev/null
     else
