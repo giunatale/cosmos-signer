@@ -11,7 +11,7 @@ module, however it just provides the CLI commands to sign transactions in the
 `x/signer/client/cli` package.
 The CLI code extends and-reuses the `x/auth/client/cli`
 package from the Cosmos-SDK, which already provides code to sign transactions.
-The only purpose of the `x/signer` module is to allow dynamnic registration
+The only purpose of the `x/signer` module is to allow dynamic registration
 of the proto types required to encode and decode the provided transactions.
 
 Since the `x/signer` module is a Cosmos-SDK module, it is also possible to
@@ -26,8 +26,8 @@ Other important modifications for the CLI itself are available at
 `cmd/cosmos-signer/cmd`, in particular in `commands.go`.
 
 To allow dynamic registration of the proto types, the `x/signer` module
-uses [go plugin](https://pkg.go.dev/plugin) to load the required types from
-per-chain plugins.
+uses [go plugins](https://pkg.go.dev/plugin) to load the required types
+from per-chain plugins.
 
 These plugins are built - as of now - by ripping out and modifying the original
 chain source code, of which we just need the `types` packages of the used modules,
@@ -50,7 +50,7 @@ func main() {}
 
 Examples can be found for `gaia` and `govgen` in the `plugins` directory.
 
-In both cases, we used - or adapted the code  to support - Cosmos-SDK v0.50.x,
+In both cases, we used - or adapted the code to support - Cosmos-SDK v0.50.x,
 and synchronized any other dependency with the root application.
 This was done as an intentional excercise to test compatibility across different
 Cosmos-SDK versions, and to check complexity and feasibility of getting to a
@@ -81,7 +81,7 @@ to sign offline-generated transactions.
 There are also a few notable additions of flags that are available
 with the cosmos signer:
 
-- `--bech42-prefix`: to specify the bech32 prefix that we need to use for
+- `--bech32-prefix`: to specify the bech32 prefix that we need to use for
   encoding the addresses. It defaults to `cosmos`, and can be used throghout
   the whole application (e.g. even for `keys` commands).
 - `--prefix-pub`: to specify the prefix for the public key. It defaults to
