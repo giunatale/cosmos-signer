@@ -53,25 +53,11 @@ func NewRootCmd() *cobra.Command {
 			cmd.SetErr(cmd.ErrOrStderr())
 
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
-			clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
-			if err != nil {
-				return err
-			}
 
 			bech32prefix, err := cmd.Flags().GetString(flagBech32Prefix)
 			if err != nil {
 				return err
 			}
-			prefixPublic, err := cmd.Flags().GetString(flagPrefixPublic)
-			if err != nil {
-				return err
-			}
-			bech32PrefixAccPub := bech32prefix + prefixPublic
-			// set the bech32 prefix
-			sdkCfg := sdk.GetConfig()
-			sdkCfg.SetBech32PrefixForAccount(bech32prefix, bech32PrefixAccPub)
-			sdkCfg.Seal()
-
 			if err := depinject.Inject(
 				depinject.Configs(app.NewAppConfigWithBech32Prefix(bech32prefix),
 					depinject.Supply(
@@ -79,7 +65,7 @@ func NewRootCmd() *cobra.Command {
 					),
 					depinject.Provide(
 						ProvideClientContext,
-						ProvideKeyring,
+						// ProvideKeyring,
 					),
 				),
 				&txConfigOpts,
@@ -89,6 +75,21 @@ func NewRootCmd() *cobra.Command {
 			); err != nil {
 				panic(err)
 			}
+
+			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			prefixPublic, err := cmd.Flags().GetString(flagPrefixPublic)
+			if err != nil {
+				return err
+			}
+			bech32PrefixAccPub := bech32prefix + prefixPublic
+			// set the bech32 prefix
+			sdkCfg := sdk.GetConfig()
+			sdkCfg.SetBech32PrefixForAccount(bech32prefix, bech32PrefixAccPub)
+			sdkCfg.Seal()
 
 			clientCtx, err = config.ReadFromClientConfig(clientCtx)
 			if err != nil {
