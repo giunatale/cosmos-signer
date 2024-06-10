@@ -4,6 +4,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"cosmossdk.io/client/v2/autocli"
 	clientv2keyring "cosmossdk.io/client/v2/autocli/keyring"
 	"cosmossdk.io/core/address"
@@ -20,8 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -35,7 +36,6 @@ const (
 
 // NewRootCmd creates a new root command for cosmos-signer. It is called once in the main function.
 func NewRootCmd() *cobra.Command {
-
 	var (
 		txConfigOpts       tx.ConfigOptions
 		autoCliOpts        autocli.AppOptions
