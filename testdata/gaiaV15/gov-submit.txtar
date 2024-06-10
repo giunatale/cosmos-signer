@@ -1,0 +1,189 @@
+# Generate text proposal tx
+exec $NODE_BIN tx gov submit-proposal text-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas 100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
+
+
+# Generate send proposal tx 
+exec $NODE_BIN tx gov submit-proposal send-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
+
+
+# Generate upgrade-software proposal tx
+exec $NODE_BIN tx gov submit-proposal upgrade-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+
+# Generate community-pool-spend proposal tx
+exec $NODE_BIN tx gov submit-proposal community-pool-spend-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+
+# Generate client-update proposal tx
+exec $NODE_BIN tx gov submit-proposal client-update-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+
+# Generate param-change proposal tx
+exec $NODE_BIN tx gov submit-proposal param-change-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+-- text-proposal.json --
+{
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
+-- send-proposal.json --
+{
+  "messages": [
+    {
+      "@type": "/cosmos.bank.v1beta1.MsgSend",
+      "from_address": "cosmos1p3ucd3ptpw902fluyjzhq3ffgq4ntddac9sa3s",
+      "to_address": "cosmos1nm0rrq86ucezaf8uj35pq9fpwr5r82cl8sc7p5",
+      "amount":[{"denom": "uatom","amount": "10"}]
+		},
+    {
+      "@type": "/cosmos.bank.v1beta1.MsgSend",
+      "from_address": "cosmos1p3ucd3ptpw902fluyjzhq3ffgq4ntddac9sa3s",
+      "to_address": "cosmos1nm0rrq86ucezaf8uj35pq9fpwr5r82cl8sc7p5",
+      "amount":[{"denom": "uatom","amount": "10"}]
+    }
+  ],
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
+-- upgrade-proposal.json --
+{
+  "messages": [
+    {
+      "@type": "/cosmos.gov.v1.MsgExecLegacyContent",
+      "content": {
+        "@type": "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal",
+        "title": "Gaia v17 Software Upgrade",
+        "description": "my-desc",
+        "plan": {
+          "name": "v17",
+          "time": "0001-01-01T00:00:00Z",
+          "height": "20739800",
+          "info": "my-info",
+          "upgraded_client_state": null
+        }
+      },
+      "authority": "cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn"
+    }
+  ],
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
+-- community-pool-spend-proposal.json --
+{
+  "messages": [
+		{
+  	  "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
+  	  "authority": "cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn",
+  	  "recipient": "cosmos127eafzymdwhlw67wtnqwqj4qf32yehcj0x5wg9",
+  	  "amount": [
+  	    {
+  	      "denom": "uatom",
+  	      "amount": "80000000000"
+  	    }
+  	  ]
+  	}
+	],
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
+-- client-update-proposal.json --
+{
+  "messages": [
+		{
+      "@type": "/cosmos.gov.v1.MsgExecLegacyContent",
+      "content": {
+				"@type": "/ibc.core.client.v1.ClientUpdateProposal",
+    		"title": "Substitute IBC light client for doravota",
+    		"description": "my-desc",
+    		"subject_client_id": "07-tendermint-1191",
+    		"substitute_client_id": "07-tendermint-1204"
+			},
+      "authority": "cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn"
+		}
+	],
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
+-- param-change-proposal.json --
+{
+  "messages": [
+		{
+      "@type": "/cosmos.gov.v1.MsgExecLegacyContent",
+      "content": {
+				"@type": "/cosmos.params.v1beta1.ParameterChangeProposal",
+    		"title": "Decrease InflationMin parameter to 0%",
+    		"description": "my-desc",
+    		"changes": [
+    		  {
+    		    "subspace": "mint",
+    		    "key": "InflationMin",
+    		    "value": "\"0.000000000000000000\""
+    		  }
+				]
+			},
+      "authority": "cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn"
+		}
+	],
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
