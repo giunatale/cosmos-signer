@@ -1,0 +1,21 @@
+# Generate tx with secp256p1 key
+exec $NODE_BIN tx staking create-validator --pubkey '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AjbjaJ/tXxhwPLxsg+bZSiNsn/Ony6af7cOa+QULXCn3"}' --amount 1000stake --moniker mon --identity id --commission-rate 0.1 --commission-max-rate 0.1 --commission-max-change-rate 0.1 --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
+
+# Generate tx with ed25519 key
+exec $NODE_BIN tx staking create-validator --pubkey '{"@type":"/cosmos.crypto.ed25519.PubKey","key":"AjbjaJ/tXxhwPLxsg+bZSiNsn/Ony6af7cOa+QULXCn3"}' --amount 1000stake --moniker mon --identity id --commission-rate 0.1 --commission-max-rate 0.1 --commission-max-change-rate 0.1 --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME

@@ -1,0 +1,18 @@
+# Generate 2 txs
+exec $NODE_BIN tx bank send $TEST1 $TEST2 100000uatom --home=$NODE_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+cp stdout tx.json
+exec $NODE_BIN tx bank send $TEST1 $TEST2 100000uatom --home=$NODE_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+cp stdout tx2.json
+
+# Merge into single tx with 2 messages
+exec jq '.body.messages[0]' tx.json
+cp stdout msg.json
+exec jq '.body.messages += [input]' tx2.json msg.json
+cp stdout txm.json
+
+# Sign tx
+exec $COSMOSSIGNER tx sign --offline --from=test1 --home=$NODE_HOME --keyring-dir=$NODE_HOME --keyring-backend=test --account-number=1 --sequence=0 --chain-id=$CHAINID --plugins-dir=$PLUGINS_DIR --bech32-prefix=cosmos tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
