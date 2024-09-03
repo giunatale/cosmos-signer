@@ -74,12 +74,11 @@ make them available in the `build` directory.
 ## Run
 
 The application should be familiar to anyone who has used the Cosmos-SDK CLI.
-The only available command for now is `tx sign` (and the `keys` commands for
-keys management). The interface is the same as the `x/auth`-provided commands,
-but `--offline` flag is mandatory, as obviously the signer is meant to be used
-to sign offline-generated transactions.
-There are also a few notable additions of flags that are available
-with the cosmos signer:
+Three commands are available for now. First is the `keys` commands for key management.
+Second is `tx sign`. Finally is `tx verify-signatures`. The interface is the same as the
+`x/auth`-provided commands,but `--offline` flag is mandatory, as obviously the signer
+is meant to be used to sign offline-generated transactions. There are also a few
+notable additions of flags that are available with the cosmos signer:
 
 - `--bech32-prefix`: to specify the bech32 prefix that we need to use for
   encoding the addresses. It defaults to `cosmos`, and can be used throghout

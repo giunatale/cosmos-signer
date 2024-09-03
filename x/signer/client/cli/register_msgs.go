@@ -121,6 +121,10 @@ func getLookupPackages(unregisteredTypes map[string]struct{}) map[string]struct{
 // the leading `/`, replacing `.` with `_` and uppercasing
 // the first character.
 func sanitizeSymbolName(symbolName string) string {
+	if symbolName == "" {
+		return ""
+	}
+
 	symbolName = symbolName[1:]
 	symbolName = strings.ReplaceAll(symbolName, ".", "_")
 	symbolName = capitalizeFirstChar(symbolName)

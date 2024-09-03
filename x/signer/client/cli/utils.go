@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"reflect"
 )
 
 var (
@@ -43,22 +44,45 @@ func (w *FilterNullKeysJSON) FilterNullJSONKeys(data interface{}) interface{} {
 	switch v := data.(type) {
 	case map[string]interface{}:
 		for key, val := range v {
-			if _, ok := w.NullKeys[key]; ok {
-				if val == nil {
-					delete(v, key)
-				} else {
-					v[key] = w.FilterNullJSONKeys(val)
+			// Recursively filter the value
+			v[key] = w.FilterNullJSONKeys(val)
+
+			// Remove the key if it's in NullKeys and the value is nil
+			if _, ok := w.NullKeys[key]; ok && v[key] == nil {
+				delete(v, key)
+			}
+
+			// Remove the key if contains only nil values after filtering
+			if nestedMap, isMap := v[key].(map[string]interface{}); isMap {
+				for nestedKey, nestedVal := range nestedMap {
+					if nestedVal == nil {
+						delete(nestedMap, nestedKey)
+					}
 				}
-			} else {
-				v[key] = w.FilterNullJSONKeys(val)
 			}
 		}
+
 		return v
+
 	case []interface{}:
+		var tmpRet interface{}
+		j := 0
 		for i := range v {
-			v[i] = w.FilterNullJSONKeys(v[i])
+			tmpRet = w.FilterNullJSONKeys(v[i])
+			if !isNil(tmpRet) {
+				v[j] = tmpRet
+				j++
+			}
 		}
+
+		// avoid memory leak
+		for k := j; k < len(v); k++ {
+			v[k] = nil
+		}
+
+		v = v[:j]
 		return v
+
 	default:
 		return v
 	}
@@ -84,4 +108,23 @@ func FilterNullJSONKeysFile(outputDoc string) {
 			panic(err)
 		}
 	}
+}
+
+func isNil(val any) bool {
+	if val == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(val)
+	k := v.Kind()
+	switch k {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer,
+		reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		return v.IsNil()
+
+	case reflect.Invalid:
+		return true
+	}
+
+	return false
 }
